@@ -15,14 +15,26 @@ const authenticatedUser = (username,password)=>{ //returns boolean
 
 //only registered users can login
 regd_users.post("/login", (req,res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  const {username, password} = req.body;
+
+  if (!username || !password)
+    reutrn (res.status(400).json({message: "Username and password are required for login."}));
+
+  //Find the user
+  let user = users.find(u => u.username === username && u.password === password);
+
+  //If not found
+  if (!user)
+    return (res.status(404).json({message: "Invalid login credentials."}));
+
+  // Generate JWT
+  const accessToken = jwt.sign({username: user.username}, "secret_key", {expiresIn: "1h"});
+  return res.status(200).json({message: "You are login successful", token: accessToken});
 });
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  return res.status(200).json({message: "Yet to be implemented"});
 });
 
 module.exports.authenticated = regd_users;
