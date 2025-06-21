@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
@@ -31,46 +32,81 @@ public_users.post('/register', function (req, res) {
 	});
   });
 
+// Get the list of the books
+public_users.get('/', (req, res) => {
+	new Promise((resolve, reject) => {
+		try {
+			resolve(books)
+		} catch (error) {
+			reject(error)
+		}
+	})
+	.then(booksList => res.status(200).json(booksList))
+	.catch(error => res.status(500).json({message: "Something went wrong."}))
+});
+
 // Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
-  //Write your code here
-  let isbn = req.params.isbn;
-  if (!books[isbn])
-	return (res.status(404).join({message: "Book not found for the given ISBN."}))
-  return res.status(200).json(books[isbn]);
- });
-  
+public_users.get('/isbn/:isbn', (req, res) => {
+    const isbn = req.params.isbn;
+    
+	new Promise((resolve, reject) => {
+		try {
+			const book = books[isbn];
+			if (!book)
+				reject(new Error("Book not found for the given ISBN."))
+			else
+				resolve(book)
+		} catch (error) {
+			reject(error)
+		}
+	})
+	.then(book => res.status(200).json(book))
+	.catch(error => res.status(404).json({message: error}))
+})
+
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
   let author = req.params.author;
-  let matchedBooks = [];
 
-  for (let key in books)
-  {
-	if (books[key].author.toLowerCase() === author.toLowerCase())
-		matchedBooks.push(books[key]);
-  }
-  if (matchedBooks.length === 0)
-		return (res.status(404).join({message: "Book not found for the given author."}));
+  new Promise((resolve, reject) => {
 
-  return res.status(200).json(matchedBooks);
+	  let matchedBooks = [];
+
+	  for (let key in books)
+	  {
+		if (books[key].author.toLowerCase() === author.toLowerCase())
+			matchedBooks.push(books[key]);
+	  }
+	  if (matchedBooks.length === 0)
+			reject("Book not found for the given author.");
+	  else
+	  	resolve(matchedBooks);
+  })
+  .then(matchedBooks => res.status(200).json(matchedBooks))
+  .catch(error => res.status(404).json({message: error}));
 });
 
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
-  //Write your code here
+public_users.get('/title/:title', (req, res) =>
+{
   let title = req.params.title;
-  let matchedTitles = [];
 
-  for (let key in books)
-  {
-	if (books[key].title.toLowerCase() === title.toLowerCase())
-		matchedTitles.push(books[key]);
-  }
+  new Promise((resolve, reject) => {
+	let matchedTitles = [];
 
-  if (matchedTitles.length === 0)
-	return (res.status(404).json({message: "Book not found for the given title."}));
-return res.status(200).json(matchedTitles);
+	for (let key in books)
+	{
+	  if (books[key].title.toLowerCase() === title.toLowerCase())
+		  matchedTitles.push(books[key]);
+	}
+  
+	if (matchedTitles.length === 0)
+		reject("Book not found for the given title.");
+	else
+		resolve(matchedTitles)
+  })
+  .then(matchedTitles => res.status(200).json(matchedTitles))
+  .catch(error => res.status(404).json({message: error}));
 });
 
 //  Get book review
